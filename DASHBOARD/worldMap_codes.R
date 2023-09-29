@@ -6,12 +6,13 @@ worldMap='https://github.com/SocialAnalytics-StrategicIntelligence/codes/raw/mai
 
 #install.packages("sf")
 
+#library(rio)
 library(sf)
-st_layers(worldMap)
+st_layers("worlMapData.gpkg")
 
 #-----
 
-countries=sf::st_read(worldMap,layer='countries')
+countries=sf::st_read("worlMapData.gpkg",layer='countries')
 
 #-----
 
@@ -20,7 +21,7 @@ base=countries #estoy creando una copia
 base$Total_jc5_cat=NULL #truco para que aparezca el mundo
 
 baseMap=ggplot() + geom_sf(data=base, color='grey60',fill='white',lwd = 0.1) + theme_minimal()
-choro1=baseMap + geom_sf(data=countries,aes(fill=Total_jc5_cat),lwd = 0.1,show.legend = F) 
+choro1=baseMap + geom_sf(data=countries,aes(fill=Total_jc5_cat),lwd = 0.1,show.legend = F)
 choro1=choro1 + facet_wrap(~Total_jc5_cat,ncol = 2)
 choro1=choro1 + scale_fill_manual(values = c("green", "blue", "grey","red","black"))
 choro1
@@ -38,28 +39,31 @@ saveRDS(hist1, file = "hist1.rds")
 library(dplyr)
 library(ggrepel)
 
+#Cómo poner que se grafique los mejores y los peores países
 countriesWorst=countries %>% group_by(continent) %>% top_n(1, Total)
 countriesBest=countries %>% group_by(continent) %>% top_n(-1, Total)
 worstAndBest=c(countriesWorst$name,countriesBest$name)
 
 
 
-countries$label=ifelse(countries$name%in%worstAndBest,countries$name,"")
+countries$label=ifelse(countries$name%in%worstAndBest,countries$name,"") #con este código se utilizará solo aquellos países mejores y peores
 
 baseScatter=ggplot(data=countries,aes(x=C1_SecurityApparatus,
                                       y=C2_FactionalizedElites)) + theme_linedraw() 
 scatter1=baseScatter+geom_point(color='grey60',shape = 21)
 
 
-scatter1=scatter1 + facet_wrap(~continent) 
+scatter1=scatter1 + facet_wrap(~continent) #crea mapa por categoría; en este caso es por continente
 scatter1=scatter1 + geom_text_repel(aes(label=label,size=C3_GroupGrievance),min.segment.length = 0.05)
+
+scatter1
 
 saveRDS(scatter1, file = "scatter1.rds")
 
 
 #------
 
-library(leaflet)
+library(leaflet) #mapas dinámicos
 factpal <- colorFactor(c("green", "blue", "grey","red","black"), 
                        countries$Total_jc5_cat)
 
